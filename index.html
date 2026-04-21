@@ -570,6 +570,8 @@
     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
     <h2>Search for a company</h2>
     <p>Enter a company name or ID above to view email and security metrics.</p>
+    <p style="margin-top:16px;color:#6b7280;font-size:13px;">Try one of these example companies:</p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap" id="companyChips"></div>
   </div>
 
   <div id="dashboard"></div>
@@ -779,14 +781,20 @@ const COMPANIES = [
 
 let currentCompany = null;
 
+// Render company chips in empty state
+document.getElementById('companyChips').innerHTML = COMPANIES.map(c => {
+  const color = { legit: 'var(--success)', likely_legit: 'var(--success)', monitoring: 'var(--warning)', fraud_alert: 'var(--danger)', fraudulent: 'var(--danger)' }[c.fraudStatus] || '#9ca3af';
+  return `<button onclick="selectCompany(${c.id})" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid #e5e7eb;border-radius:9999px;background:white;cursor:pointer;font-size:13px;font-weight:500;transition:all 0.15s" onmouseover="this.style.borderColor='${color}';this.style.boxShadow='0 0 0 1px ${color}'" onmouseout="this.style.borderColor='#e5e7eb';this.style.boxShadow='none'"><span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block"></span>${c.name}</button>`;
+}).join('');
+
 // Search
 const searchInput = document.getElementById('searchInput');
 const searchResults = document.getElementById('searchResults');
 
-searchInput.addEventListener('input', (e) => {
-  const q = e.target.value.toLowerCase().trim();
-  if (!q) { searchResults.classList.remove('open'); return; }
-  const matches = COMPANIES.filter(c => c.name.toLowerCase().includes(q) || c.slug.includes(q) || String(c.id).includes(q));
+function showSearchResults(q) {
+  const matches = q
+    ? COMPANIES.filter(c => c.name.toLowerCase().includes(q) || c.slug.includes(q) || String(c.id).includes(q))
+    : COMPANIES;
   if (matches.length === 0) {
     searchResults.innerHTML = '<div style="padding:12px 14px;color:#6b7280;font-size:13px;">No companies found</div>';
   } else {
@@ -801,9 +809,10 @@ searchInput.addEventListener('input', (e) => {
     `).join('');
   }
   searchResults.classList.add('open');
-});
+}
 
-searchInput.addEventListener('focus', () => { if (searchInput.value.trim()) searchInput.dispatchEvent(new Event('input')); });
+searchInput.addEventListener('input', (e) => { showSearchResults(e.target.value.toLowerCase().trim()); });
+searchInput.addEventListener('focus', () => { showSearchResults(searchInput.value.toLowerCase().trim()); });
 document.addEventListener('click', (e) => { if (!e.target.closest('.search-box')) searchResults.classList.remove('open'); });
 
 function fraudBadgeClass(s) {
