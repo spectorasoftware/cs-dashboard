@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS Dashboard - Email &amp; Account Security</title>
+<style>
+  :root {
+    --bg: #f3f4f6;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --text: #111827;
+    --text-secondary: #6b7280;
+    --primary: #2563eb;
+    --primary-light: #dbeafe;
+    --danger: #dc2626;
+    --danger-light: #fee2e2;
+    --danger-bg: #fef2f2;
+    --warning: #d97706;
+    --warning-light: #fef3c7;
+    --success: #059669;
+    --success-light: #d1fae5;
+    --purple: #7c3aed;
+    --purple-light: #ede9fe;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .search-box {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+  }
+
+  .search-box input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .search-box input:focus { border-color: var(--primary); }
+
+  .search-box svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+  }
+
+  .search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    display: none;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .search-results.open { display: block; }
+
+  .search-result-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: var(--bg); }
+
+  .search-result-item .company-name { font-weight: 600; font-size: 14px; }
+  .search-result-item .company-meta { font-size: 12px; color: var(--text-secondary); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+
+  .badge-success { background: var(--success-light); color: var(--success); }
+  .badge-warning { background: var(--warning-light); color: var(--warning); }
+  .badge-danger { background: var(--danger-light); color: var(--danger); }
+  .badge-info { background: var(--primary-light); color: var(--primary); }
+  .badge-purple { background: var(--purple-light); color: var(--purple); }
+  .badge-neutral { background: #f3f4f6; color: var(--text-secondary); }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px 24px;
+  }
+
+  #empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-secondary);
+  }
+
+  #empty-state svg { margin-bottom: 16px; }
+  #empty-state h2 { font-size: 20px; margin-bottom: 8px; color: var(--text); }
+
+  #dashboard { display: none; }
+
+  .company-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .company-header h2 { font-size: 22px; }
+  .company-header .meta { color: var(--text-secondary); font-size: 13px; margin-top: 2px; }
+
+  .status-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .grid {
+    display: grid;
+    gap: 16px;
+  }
+
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+
+  @media (max-width: 1100px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 768px) {
+    .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .stat-card .value {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .stat-card .label {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .stat-card .sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-row:last-child { border-bottom: none; }
+
+  .stat-row .stat-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .stat-row .stat-value {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .progress-bar {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .progress-bar .fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 28px 0 12px;
+  }
+
+  .section-title:first-child { margin-top: 0; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid var(--border);
+  }
+
+  table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  table tr:last-child td { border-bottom: none; }
+  table tr:hover td { background: #f9fafb; }
+
+  .spam-reason {
+    display: inline-block;
+    background: var(--danger-light);
+    color: var(--danger);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    margin: 1px 2px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--card);
+    color: var(--text);
+    transition: all 0.15s;
+  }
+
+  .btn:hover { background: var(--bg); }
+
+  .btn-danger {
+    background: var(--danger);
+    color: white;
+    border-color: var(--danger);
+  }
+
+  .btn-danger:hover { background: #b91c1c; }
+
+  .btn-success {
+    background: var(--success);
+    color: white;
+    border-color: var(--success);
+  }
+
+  .btn-success:hover { background: #047857; }
+
+  .btn-warning {
+    background: var(--warning);
+    color: white;
+    border-color: var(--warning);
+  }
+
+  .btn-warning:hover { background: #b45309; }
+
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+  }
+
+  .action-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--card);
+  }
+
+  .action-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
+  }
+
+  .action-card.destructive:hover {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 1px var(--danger);
+  }
+
+  .action-card .action-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .action-card .action-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .action-card .action-status {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .timeline-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .timeline-item:last-child { border-bottom: none; }
+
+  .timeline-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .timeline-content { flex: 1; }
+  .timeline-content .event { font-size: 13px; font-weight: 500; }
+  .timeline-content .time { font-size: 12px; color: var(--text-secondary); }
+
+  .chart-bar-group {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 80px;
+  }
+
+  .chart-bar {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    min-width: 12px;
+    position: relative;
+    cursor: default;
+  }
+
+  .chart-bar:hover { opacity: 0.8; }
+
+  .chart-labels {
+    display: flex;
+    gap: 3px;
+    margin-top: 4px;
+  }
+
+  .chart-labels span {
+    flex: 1;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-secondary);
+    min-width: 12px;
+  }
+
+  .legend {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .tab {
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .alert-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .alert-banner.danger {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger-light);
+    color: var(--danger);
+  }
+
+  .alert-banner.warning {
+    background: #fffbeb;
+    border: 1px solid var(--warning-light);
+    color: var(--warning);
+  }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 24px;
+    max-width: 440px;
+    width: 90%;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  }
+
+  .modal h3 { font-size: 16px; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1f2937;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 300;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  .dot-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>CS Dashboard</h1>
+  <div class="search-box">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="Search company by name or ID..." autocomplete="off">
+    <div class="search-results" id="searchResults"></div>
+  </div>
+</header>
+
+<div class="container">
+  <div id="empty-state">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+    <h2>Search for a company</h2>
+    <p>Enter a company name or ID above to view email and security metrics.</p>
+  </div>
+
+  <div id="dashboard"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <h3 id="modalTitle"></h3>
+    <p id="modalBody"></p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn" id="modalConfirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const COMPANIES = [
+  {
+    id: 1,
+    name: "Apex Home Inspections",
+    slug: "apex-home",
+    plan: "Professional",
+    inspectorCount: 5,
+    createdAt: "2023-06-15",
+    emailEnabled: true,
+    smsEnabled: true,
+    lockout: false,
+    fraudStatus: "legit",
+    spamThreshold: 0.6,
+    paymentsBlocked: false,
+    preventSignup: false,
+    dailyEmailsSent: 42,
+    dailyEmailLimit: 500,
+    dailySMSSent: 18,
+    dailySMSLimit: 500,
+    deliveryMetrics: {
+      sent: 1247, delivered: 1198, bounced: 22, spamReports: 3, dropped: 5, opens: 876, clicks: 234,
+      bounceRate: 1.8, spamRate: 0.2, deliveryRate: 96.1, openRate: 73.1, clickRate: 19.5
+    },
+    massEmails: [
+      { id: "ME-401", subject: "Spring Maintenance Tips", sentAt: "2026-04-18", sent: 342, delivered: 335, bounced: 4, spamReports: 1, opens: 210, clicks: 45 },
+      { id: "ME-388", subject: "Schedule Your Annual Inspection", sentAt: "2026-04-05", sent: 289, delivered: 280, bounced: 6, spamReports: 2, opens: 178, clicks: 52 },
+    ],
+    recentEmails: [
+      { id: "E-8821", to: "client@example.com", subject: "Your Inspection Report is Ready", sentAt: "2026-04-21 14:23", spamScore: 0.05, spam: false, status: "delivered", reasons: [] },
+      { id: "E-8820", to: "agent@realty.com", subject: "Inspection Scheduled - 123 Oak St", sentAt: "2026-04-21 13:11", spamScore: 0.02, spam: false, status: "opened", reasons: [] },
+      { id: "E-8819", to: "buyer@mail.com", subject: "Payment Confirmation", sentAt: "2026-04-21 11:45", spamScore: 0.08, spam: false, status: "delivered", reasons: [] },
+    ],
+    spamHistory: { days: ["Apr 8","Apr 9","Apr 10","Apr 11","Apr 12","Apr 13","Apr 14","Apr 15","Apr 16","Apr 17","Apr 18","Apr 19","Apr 20","Apr 21"], counts: [0,0,1,0,0,0,0,0,0,1,0,0,0,0] },
+    users: [
+      { name: "John Apex", email: "john@apexhome.com", role: "Owner", lastSignIn: "2026-04-21 09:15", signInCount: 342, failedAttempts: 0, lockedAt: null, ip: "72.14.201.33", twoFactor: true },
+      { name: "Sarah Miller", email: "sarah@apexhome.com", role: "Inspector", lastSignIn: "2026-04-20 16:42", signInCount: 128, failedAttempts: 0, lockedAt: null, ip: "72.14.201.35", twoFactor: false },
+      { name: "Tom Davis", email: "tom@apexhome.com", role: "Inspector", lastSignIn: "2026-04-19 08:30", signInCount: 87, failedAttempts: 1, lockedAt: null, ip: "98.45.12.7", twoFactor: false },
+    ],
+    circuitBreaker: { triggered: false, lastTriggeredAt: null, smsSpamsLast2h: 0, emailSpamsLast2h: 0 },
+    timeline: [
+      { event: "Email delivered to client@example.com", time: "2026-04-21 14:23", type: "success" },
+      { event: "User John Apex signed in from 72.14.201.33", time: "2026-04-21 09:15", type: "info" },
+      { event: "Mass email campaign 'Spring Maintenance Tips' sent (342 recipients)", time: "2026-04-18 10:00", type: "info" },
+      { event: "1 spam report received for ME-388", time: "2026-04-06 22:15", type: "warning" },
+    ]
+  },
+  {
+    id: 2,
+    name: "QuickCheck Property Services",
+    slug: "quickcheck",
+    plan: "Trial",
+    inspectorCount: 2,
+    createdAt: "2026-03-28",
+    emailEnabled: true,
+    smsEnabled: false,
+    lockout: false,
+    fraudStatus: "monitoring",
+    spamThreshold: 0.5,
+    paymentsBlocked: false,
+    preventSignup: false,
+    dailyEmailsSent: 87,
+    dailyEmailLimit: 200,
+    dailySMSSent: 0,
+    dailySMSLimit: 200,
+    deliveryMetrics: {
+      sent: 312, delivered: 265, bounced: 28, spamReports: 11, dropped: 8, opens: 145, clicks: 22,
+      bounceRate: 9.0, spamRate: 3.5, deliveryRate: 84.9, openRate: 54.7, clickRate: 8.3
+    },
+    massEmails: [
+      { id: "ME-415", subject: "URGENT: Act Now - Limited Time Inspection Deal!!!", sentAt: "2026-04-20", sent: 156, delivered: 118, bounced: 22, spamReports: 8, opens: 34, clicks: 3 },
+      { id: "ME-410", subject: "Don't Miss Out! Free Inspection Assessment", sentAt: "2026-04-14", sent: 98, delivered: 82, bounced: 10, spamReports: 3, opens: 41, clicks: 7 },
+    ],
+    recentEmails: [
+      { id: "E-9102", to: "victim@mail.com", subject: "URGENT: Your account requires immediate verification", sentAt: "2026-04-21 15:02", spamScore: 0.82, spam: true, status: "blocked", reasons: ["urgency_language", "account_threats", "phishing_pii_request"] },
+      { id: "E-9101", to: "target@mail.com", subject: "Wire transfer needed for inspection deposit", sentAt: "2026-04-21 14:48", spamScore: 0.71, spam: true, status: "blocked", reasons: ["wire_transfer_fraud", "financial_scam"] },
+      { id: "E-9100", to: "user@mail.com", subject: "Inspection Report - 456 Elm St", sentAt: "2026-04-21 12:30", spamScore: 0.12, spam: false, status: "delivered", reasons: [] },
+      { id: "E-9099", to: "agent@broker.com", subject: "Your inspection is confirmed", sentAt: "2026-04-21 11:15", spamScore: 0.04, spam: false, status: "opened", reasons: [] },
+      { id: "E-9098", to: "list@bulk.com", subject: "ACT NOW!! Claim your FREE home inspection gift card", sentAt: "2026-04-21 10:33", spamScore: 0.91, spam: true, status: "blocked", reasons: ["urgency_language", "gift_card_scam", "suspicious_tld"] },
+    ],
+    spamHistory: { days: ["Apr 8","Apr 9","Apr 10","Apr 11","Apr 12","Apr 13","Apr 14","Apr 15","Apr 16","Apr 17","Apr 18","Apr 19","Apr 20","Apr 21"], counts: [0,1,2,1,3,2,4,3,5,4,6,5,8,11] },
+    users: [
+      { name: "Mike Quick", email: "mike@quickcheck.io", role: "Owner", lastSignIn: "2026-04-21 15:05", signInCount: 24, failedAttempts: 3, lockedAt: null, ip: "185.220.101.42", twoFactor: false },
+      { name: "Lisa Quick", email: "lisa@quickcheck.io", role: "Inspector", lastSignIn: "2026-04-18 09:20", signInCount: 8, failedAttempts: 0, lockedAt: null, ip: "185.220.101.42", twoFactor: false },
+    ],
+    circuitBreaker: { triggered: false, smsSpamsLast2h: 0, emailSpamsLast2h: 11, lastTriggeredAt: null },
+    timeline: [
+      { event: "Email blocked: spam score 0.91 (gift card scam, urgency language)", time: "2026-04-21 15:02", type: "danger" },
+      { event: "Email blocked: spam score 0.82 (phishing, account threats)", time: "2026-04-21 14:48", type: "danger" },
+      { event: "Email blocked: spam score 0.71 (wire transfer fraud)", time: "2026-04-21 10:33", type: "danger" },
+      { event: "3 failed login attempts by mike@quickcheck.io", time: "2026-04-21 08:12", type: "warning" },
+      { event: "Fraud status changed to 'monitoring'", time: "2026-04-20 16:30", type: "warning" },
+      { event: "8 spam reports in mass email ME-415", time: "2026-04-20 14:00", type: "danger" },
+      { event: "SMS disabled by system (spam threshold)", time: "2026-04-19 11:45", type: "danger" },
+      { event: "Mass email campaign sent with suspicious subject line", time: "2026-04-14 09:00", type: "warning" },
+    ]
+  },
+  {
+    id: 3,
+    name: "TrustBuild Inspections LLC",
+    slug: "trustbuild",
+    plan: "Enterprise",
+    inspectorCount: 12,
+    createdAt: "2021-11-03",
+    emailEnabled: false,
+    smsEnabled: false,
+    lockout: true,
+    fraudStatus: "fraudulent",
+    spamThreshold: 0.4,
+    paymentsBlocked: true,
+    preventSignup: true,
+    dailyEmailsSent: 0,
+    dailyEmailLimit: 1200,
+    dailySMSSent: 0,
+    dailySMSLimit: 1200,
+    deliveryMetrics: {
+      sent: 4521, delivered: 3102, bounced: 842, spamReports: 389, dropped: 188, opens: 1245, clicks: 98,
+      bounceRate: 18.6, spamRate: 8.6, deliveryRate: 68.6, openRate: 40.1, clickRate: 3.2
+    },
+    massEmails: [
+      { id: "ME-390", subject: "Congratulations! You've won a free inspection", sentAt: "2026-04-10", sent: 2400, delivered: 1580, bounced: 510, spamReports: 220, opens: 320, clicks: 15 },
+      { id: "ME-385", subject: "Act immediately - Your home is at risk!", sentAt: "2026-04-03", sent: 1800, delivered: 1200, bounced: 380, spamReports: 150, opens: 410, clicks: 28 },
+    ],
+    recentEmails: [
+      { id: "E-7650", to: "bulk1@list.com", subject: "You've been selected for a FREE gift card!", sentAt: "2026-04-10 22:14", spamScore: 0.97, spam: true, status: "blocked", reasons: ["gift_card_scam", "urgency_language", "brand_impersonation", "suspicious_tld"] },
+      { id: "E-7649", to: "bulk2@list.com", subject: "FINAL WARNING: Account suspended", sentAt: "2026-04-10 22:13", spamScore: 0.94, spam: true, status: "blocked", reasons: ["account_threats", "phishing_pii_request", "urgency_language"] },
+      { id: "E-7648", to: "bulk3@list.com", subject: "Verify your PayPal account now", sentAt: "2026-04-10 22:12", spamScore: 0.96, spam: true, status: "blocked", reasons: ["brand_impersonation", "homoglyph_attack", "phishing_pii_request"] },
+    ],
+    spamHistory: { days: ["Apr 8","Apr 9","Apr 10","Apr 11","Apr 12","Apr 13","Apr 14","Apr 15","Apr 16","Apr 17","Apr 18","Apr 19","Apr 20","Apr 21"], counts: [45,52,78,0,0,0,0,0,0,0,0,0,0,0] },
+    users: [
+      { name: "Frank Burns", email: "frank@trustbuild.com", role: "Owner", lastSignIn: "2026-04-10 22:05", signInCount: 56, failedAttempts: 8, lockedAt: "2026-04-11 01:30", ip: "103.75.201.5", twoFactor: false },
+      { name: "Ghost Account", email: "admin@trustbuild.com", role: "Admin", lastSignIn: "2026-04-10 21:58", signInCount: 12, failedAttempts: 8, lockedAt: "2026-04-11 01:30", ip: "103.75.201.5", twoFactor: false },
+    ],
+    circuitBreaker: { triggered: true, smsSpamsLast2h: 0, emailSpamsLast2h: 0, lastTriggeredAt: "2026-04-10 23:15" },
+    timeline: [
+      { event: "Company locked out by CS agent", time: "2026-04-11 09:00", type: "danger" },
+      { event: "Payments blocked", time: "2026-04-11 09:00", type: "danger" },
+      { event: "Email disabled by CS agent", time: "2026-04-11 08:55", type: "danger" },
+      { event: "SMS disabled by CS agent", time: "2026-04-11 08:55", type: "danger" },
+      { event: "Fraud status set to 'fraudulent'", time: "2026-04-11 08:50", type: "danger" },
+      { event: "Circuit breaker triggered: 78 spam emails in 2 hours", time: "2026-04-10 23:15", type: "danger" },
+      { event: "220 spam reports from mass email ME-390", time: "2026-04-10 22:30", type: "danger" },
+      { event: "Account frank@trustbuild.com locked (8 failed attempts)", time: "2026-04-11 01:30", type: "warning" },
+      { event: "Brand impersonation detected (PayPal)", time: "2026-04-10 22:12", type: "danger" },
+    ]
+  },
+  {
+    id: 4,
+    name: "Reliable Inspections Co",
+    slug: "reliable",
+    plan: "Professional",
+    inspectorCount: 3,
+    createdAt: "2024-08-20",
+    emailEnabled: true,
+    smsEnabled: true,
+    lockout: false,
+    fraudStatus: "legit",
+    spamThreshold: 0.6,
+    paymentsBlocked: false,
+    preventSignup: false,
+    dailyEmailsSent: 15,
+    dailyEmailLimit: 300,
+    dailySMSSent: 8,
+    dailySMSLimit: 300,
+    deliveryMetrics: {
+      sent: 856, delivered: 841, bounced: 8, spamReports: 1, dropped: 2, opens: 692, clicks: 187,
+      bounceRate: 0.9, spamRate: 0.1, deliveryRate: 98.2, openRate: 82.3, clickRate: 22.2
+    },
+    massEmails: [
+      { id: "ME-420", subject: "Your Home Maintenance Checklist for Spring", sentAt: "2026-04-19", sent: 178, delivered: 176, bounced: 1, spamReports: 0, opens: 145, clicks: 38 },
+    ],
+    recentEmails: [
+      { id: "E-9200", to: "homeowner@mail.com", subject: "Inspection Report Ready - 789 Pine Ave", sentAt: "2026-04-21 16:10", spamScore: 0.03, spam: false, status: "delivered", reasons: [] },
+      { id: "E-9199", to: "agent@homes.com", subject: "Scheduling Confirmation", sentAt: "2026-04-21 14:22", spamScore: 0.01, spam: false, status: "opened", reasons: [] },
+    ],
+    spamHistory: { days: ["Apr 8","Apr 9","Apr 10","Apr 11","Apr 12","Apr 13","Apr 14","Apr 15","Apr 16","Apr 17","Apr 18","Apr 19","Apr 20","Apr 21"], counts: [0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
+    users: [
+      { name: "Amy Chen", email: "amy@reliable.com", role: "Owner", lastSignIn: "2026-04-21 08:00", signInCount: 210, failedAttempts: 0, lockedAt: null, ip: "68.105.28.12", twoFactor: true },
+      { name: "David Park", email: "david@reliable.com", role: "Inspector", lastSignIn: "2026-04-21 07:45", signInCount: 95, failedAttempts: 0, lockedAt: null, ip: "68.105.28.14", twoFactor: true },
+    ],
+    circuitBreaker: { triggered: false, smsSpamsLast2h: 0, emailSpamsLast2h: 0, lastTriggeredAt: null },
+    timeline: [
+      { event: "Email delivered to homeowner@mail.com", time: "2026-04-21 16:10", type: "success" },
+      { event: "User Amy Chen signed in", time: "2026-04-21 08:00", type: "info" },
+      { event: "Mass email 'Spring Checklist' sent (178 recipients)", time: "2026-04-19 09:30", type: "info" },
+    ]
+  }
+];
+
+let currentCompany = null;
+
+// Search
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  if (!q) { searchResults.classList.remove('open'); return; }
+  const matches = COMPANIES.filter(c => c.name.toLowerCase().includes(q) || c.slug.includes(q) || String(c.id).includes(q));
+  if (matches.length === 0) {
+    searchResults.innerHTML = '<div style="padding:12px 14px;color:#6b7280;font-size:13px;">No companies found</div>';
+  } else {
+    searchResults.innerHTML = matches.map(c => `
+      <div class="search-result-item" onclick="selectCompany(${c.id})">
+        <div>
+          <div class="company-name">${c.name}</div>
+          <div class="company-meta">ID: ${c.id} &middot; ${c.plan} &middot; ${c.inspectorCount} inspectors</div>
+        </div>
+        <span class="badge ${fraudBadgeClass(c.fraudStatus)}">${c.fraudStatus}</span>
+      </div>
+    `).join('');
+  }
+  searchResults.classList.add('open');
+});
+
+searchInput.addEventListener('focus', () => { if (searchInput.value.trim()) searchInput.dispatchEvent(new Event('input')); });
+document.addEventListener('click', (e) => { if (!e.target.closest('.search-box')) searchResults.classList.remove('open'); });
+
+function fraudBadgeClass(s) {
+  return { legit: 'badge-success', likely_legit: 'badge-success', monitoring: 'badge-warning', fraud_alert: 'badge-danger', fraudulent: 'badge-danger' }[s] || 'badge-neutral';
+}
+
+function statusBadge(status) {
+  const m = { delivered: 'badge-success', opened: 'badge-success', clicked: 'badge-info', blocked: 'badge-danger', bounced: 'badge-warning', dropped: 'badge-warning' };
+  return m[status] || 'badge-neutral';
+}
+
+function pct(n, d) { return d ? ((n / d) * 100).toFixed(1) : '0.0'; }
+
+function barColor(val, warn, danger) {
+  if (val >= danger) return 'var(--danger)';
+  if (val >= warn) return 'var(--warning)';
+  return 'var(--success)';
+}
+
+function selectCompany(id) {
+  currentCompany = COMPANIES.find(c => c.id === id);
+  searchResults.classList.remove('open');
+  searchInput.value = currentCompany.name;
+  document.getElementById('empty-state').style.display = 'none';
+  render();
+}
+
+function render() {
+  const c = currentCompany;
+  const d = c.deliveryMetrics;
+  const db = document.getElementById('dashboard');
+  db.style.display = 'block';
+
+  const alerts = [];
+  if (c.lockout) alerts.push({ type: 'danger', msg: 'This company is locked out. Users cannot sign in.' });
+  if (!c.emailEnabled) alerts.push({ type: 'danger', msg: 'Email sending is disabled for this company.' });
+  if (!c.smsEnabled && c.fraudStatus !== 'legit') alerts.push({ type: 'warning', msg: 'SMS sending is disabled for this company.' });
+  if (c.circuitBreaker.triggered) alerts.push({ type: 'danger', msg: `Circuit breaker was triggered on ${c.circuitBreaker.lastTriggeredAt}. Communications auto-disabled.` });
+  if (c.paymentsBlocked) alerts.push({ type: 'danger', msg: 'Payments are blocked for this company.' });
+  if (d.bounceRate > 5) alerts.push({ type: 'warning', msg: `High bounce rate: ${d.bounceRate}%. Industry best practice is under 2%.` });
+  if (d.spamRate > 1) alerts.push({ type: 'warning', msg: `High spam complaint rate: ${d.spamRate}%. This risks SendGrid reputation damage.` });
+  if (c.circuitBreaker.emailSpamsLast2h >= 10) alerts.push({ type: 'danger', msg: `${c.circuitBreaker.emailSpamsLast2h} spam emails detected in last 2 hours. Approaching circuit breaker threshold (15).` });
+
+  db.innerHTML = `
+    ${alerts.map(a => `<div class="alert-banner ${a.type}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>${a.msg}</div>`).join('')}
+
+    <div class="company-header">
+      <div>
+        <h2>${c.name}</h2>
+        <div class="meta">ID: ${c.id} &middot; ${c.plan} plan &middot; ${c.inspectorCount} inspectors &middot; Created ${c.createdAt}</div>
+      </div>
+      <div class="status-pills">
+        <span class="badge ${fraudBadgeClass(c.fraudStatus)}">Fraud: ${c.fraudStatus}</span>
+        <span class="badge ${c.emailEnabled ? 'badge-success' : 'badge-danger'}">Email: ${c.emailEnabled ? 'ON' : 'OFF'}</span>
+        <span class="badge ${c.smsEnabled ? 'badge-success' : 'badge-danger'}">SMS: ${c.smsEnabled ? 'ON' : 'OFF'}</span>
+        <span class="badge ${c.lockout ? 'badge-danger' : 'badge-success'}">Login: ${c.lockout ? 'LOCKED' : 'OK'}</span>
+        <span class="badge ${c.paymentsBlocked ? 'badge-danger' : 'badge-success'}">Payments: ${c.paymentsBlocked ? 'BLOCKED' : 'OK'}</span>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab active" onclick="switchTab(this, 'overview')">Overview</div>
+      <div class="tab" onclick="switchTab(this, 'emails')">Emails</div>
+      <div class="tab" onclick="switchTab(this, 'users')">Users &amp; Security</div>
+      <div class="tab" onclick="switchTab(this, 'actions')">Actions</div>
+    </div>
+
+    <div class="tab-content active" id="tab-overview">${renderOverview(c)}</div>
+    <div class="tab-content" id="tab-emails">${renderEmails(c)}</div>
+    <div class="tab-content" id="tab-users">${renderUsers(c)}</div>
+    <div class="tab-content" id="tab-actions">${renderActions(c)}</div>
+  `;
+}
+
+function renderOverview(c) {
+  const d = c.deliveryMetrics;
+  const maxSpam = Math.max(...c.spamHistory.counts, 1);
+  return `
+    <div class="grid grid-4" style="margin-bottom:16px">
+      <div class="card stat-card">
+        <div class="value" style="color:${barColor(100 - d.deliveryRate, 10, 20)}">${d.deliveryRate}%</div>
+        <div class="label">Delivery Rate</div>
+        <div class="sub">${d.delivered.toLocaleString()} / ${d.sent.toLocaleString()} sent</div>
+        <div class="progress-bar"><div class="fill" style="width:${d.deliveryRate}%;background:${barColor(100 - d.deliveryRate, 10, 20)}"></div></div>
+      </div>
+      <div class="card stat-card">
+        <div class="value" style="color:${barColor(d.bounceRate, 2, 5)}">${d.bounceRate}%</div>
+        <div class="label">Bounce Rate</div>
+        <div class="sub">${d.bounced} bounced emails</div>
+        <div class="progress-bar"><div class="fill" style="width:${Math.min(d.bounceRate * 5, 100)}%;background:${barColor(d.bounceRate, 2, 5)}"></div></div>
+      </div>
+      <div class="card stat-card">
+        <div class="value" style="color:${barColor(d.spamRate, 0.5, 1)}">${d.spamRate}%</div>
+        <div class="label">Spam Report Rate</div>
+        <div class="sub">${d.spamReports} spam reports</div>
+        <div class="progress-bar"><div class="fill" style="width:${Math.min(d.spamRate * 10, 100)}%;background:${barColor(d.spamRate, 0.5, 1)}"></div></div>
+      </div>
+      <div class="card stat-card">
+        <div class="value">${d.openRate}%</div>
+        <div class="label">Open Rate</div>
+        <div class="sub">${d.opens.toLocaleString()} opens &middot; ${d.clickRate}% click rate</div>
+        <div class="progress-bar"><div class="fill" style="width:${d.openRate}%;background:var(--primary)"></div></div>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Daily Send Usage</span></div>
+        <div class="stat-row">
+          <span class="stat-label">Emails today</span>
+          <span class="stat-value">${c.dailyEmailsSent} / ${c.dailyEmailLimit}</span>
+        </div>
+        <div class="progress-bar"><div class="fill" style="width:${pct(c.dailyEmailsSent, c.dailyEmailLimit)}%;background:var(--primary)"></div></div>
+        <div class="stat-row" style="margin-top:12px">
+          <span class="stat-label">SMS today</span>
+          <span class="stat-value">${c.dailySMSSent} / ${c.dailySMSLimit}</span>
+        </div>
+        <div class="progress-bar"><div class="fill" style="width:${pct(c.dailySMSSent, c.dailySMSLimit)}%;background:var(--purple)"></div></div>
+        <div class="stat-row" style="margin-top:12px">
+          <span class="stat-label">Circuit breaker (email)</span>
+          <span class="stat-value">${c.circuitBreaker.emailSpamsLast2h} / 15 spams in 2h</span>
+        </div>
+        <div class="progress-bar"><div class="fill" style="width:${pct(c.circuitBreaker.emailSpamsLast2h, 15)}%;background:${barColor(c.circuitBreaker.emailSpamsLast2h, 8, 12)}"></div></div>
+        <div class="stat-row" style="margin-top:12px">
+          <span class="stat-label">Circuit breaker (SMS)</span>
+          <span class="stat-value">${c.circuitBreaker.smsSpamsLast2h} / 10 spams in 2h</span>
+        </div>
+        <div class="progress-bar"><div class="fill" style="width:${pct(c.circuitBreaker.smsSpamsLast2h, 10)}%;background:${barColor(c.circuitBreaker.smsSpamsLast2h, 5, 8)}"></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Spam Detections (14 days)</span></div>
+        <div class="chart-bar-group">
+          ${c.spamHistory.counts.map(v => `<div class="chart-bar" style="height:${Math.max((v / maxSpam) * 100, 2)}%;background:${v === 0 ? '#e5e7eb' : v > 10 ? 'var(--danger)' : v > 3 ? 'var(--warning)' : 'var(--primary)'}"></div>`).join('')}
+        </div>
+        <div class="chart-labels">${c.spamHistory.days.map(d => `<span>${d.split(' ')[1]}</span>`).join('')}</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--primary)"></div>Low</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--warning)"></div>Elevated</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div>High</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-header"><span class="card-title">Activity Timeline</span></div>
+      ${c.timeline.map(t => `
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background:${{ success:'var(--success)', info:'var(--primary)', warning:'var(--warning)', danger:'var(--danger)' }[t.type]}"></div>
+          <div class="timeline-content">
+            <div class="event">${t.event}</div>
+            <div class="time">${t.time}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderEmails(c) {
+  return `
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><span class="card-title">Recent Emails</span></div>
+      <table>
+        <thead><tr><th>ID</th><th>To</th><th>Subject</th><th>Sent</th><th>Spam Score</th><th>Status</th><th>Flags</th></tr></thead>
+        <tbody>
+          ${c.recentEmails.map(e => `
+            <tr>
+              <td style="font-family:monospace;font-size:12px">${e.id}</td>
+              <td>${e.to}</td>
+              <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.subject}</td>
+              <td style="white-space:nowrap;font-size:12px">${e.sentAt}</td>
+              <td>
+                <span style="font-weight:600;color:${e.spamScore >= 0.6 ? 'var(--danger)' : e.spamScore >= 0.3 ? 'var(--warning)' : 'var(--success)'}">${e.spamScore.toFixed(2)}</span>
+              </td>
+              <td><span class="badge ${statusBadge(e.status)}">${e.status}</span></td>
+              <td>${e.reasons.map(r => `<span class="spam-reason">${r.replace(/_/g, ' ')}</span>`).join(' ') || '<span style="color:#9ca3af">-</span>'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Mass Email Campaigns</span></div>
+      <table>
+        <thead><tr><th>ID</th><th>Subject</th><th>Date</th><th>Sent</th><th>Delivered</th><th>Bounced</th><th>Spam Reports</th><th>Opens</th><th>Clicks</th></tr></thead>
+        <tbody>
+          ${c.massEmails.map(m => `
+            <tr>
+              <td style="font-family:monospace;font-size:12px">${m.id}</td>
+              <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.subject}</td>
+              <td style="white-space:nowrap">${m.sentAt}</td>
+              <td>${m.sent}</td>
+              <td>${m.delivered} <span style="color:#9ca3af;font-size:11px">(${pct(m.delivered, m.sent)}%)</span></td>
+              <td style="color:${m.bounced > 10 ? 'var(--danger)' : 'inherit'}">${m.bounced} <span style="color:#9ca3af;font-size:11px">(${pct(m.bounced, m.sent)}%)</span></td>
+              <td style="color:${m.spamReports > 3 ? 'var(--danger)' : 'inherit'}">${m.spamReports} <span style="color:#9ca3af;font-size:11px">(${pct(m.spamReports, m.sent)}%)</span></td>
+              <td>${m.opens} <span style="color:#9ca3af;font-size:11px">(${pct(m.opens, m.delivered)}%)</span></td>
+              <td>${m.clicks}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderUsers(c) {
+  return `
+    <div class="card">
+      <div class="card-header"><span class="card-title">Users</span></div>
+      <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Last Sign In</th><th>Sign Ins</th><th>Failed Attempts</th><th>Status</th><th>IP</th><th>2FA</th></tr></thead>
+        <tbody>
+          ${c.users.map(u => `
+            <tr>
+              <td style="font-weight:500">${u.name}</td>
+              <td>${u.email}</td>
+              <td><span class="badge badge-neutral">${u.role}</span></td>
+              <td style="white-space:nowrap;font-size:12px">${u.lastSignIn}</td>
+              <td>${u.signInCount}</td>
+              <td style="color:${u.failedAttempts >= 5 ? 'var(--danger)' : u.failedAttempts > 0 ? 'var(--warning)' : 'inherit'};font-weight:${u.failedAttempts > 0 ? '600' : '400'}">${u.failedAttempts} / 8</td>
+              <td>
+                ${u.lockedAt
+                  ? `<span class="badge badge-danger">Locked</span><br><span style="font-size:11px;color:#9ca3af">${u.lockedAt}</span>`
+                  : `<span class="badge badge-success">Active</span>`
+                }
+              </td>
+              <td style="font-family:monospace;font-size:12px">${u.ip}</td>
+              <td>${u.twoFactor ? '<span class="badge badge-success">Enabled</span>' : '<span class="badge badge-neutral">Off</span>'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderActions(c) {
+  return `
+    <div class="section-title">Communication Controls</div>
+    <div class="actions-grid" style="margin-bottom:24px">
+      <div class="action-card ${c.emailEnabled ? 'destructive' : ''}" onclick="toggleAction('emailEnabled')">
+        <div class="action-title">${c.emailEnabled ? 'Disable Email' : 'Enable Email'}</div>
+        <div class="action-desc">${c.emailEnabled ? 'Block this company from sending any emails' : 'Re-enable email sending for this company'}</div>
+        <div class="action-status" style="color:${c.emailEnabled ? 'var(--success)' : 'var(--danger)'}">Currently: ${c.emailEnabled ? 'Enabled' : 'Disabled'}</div>
+      </div>
+      <div class="action-card ${c.smsEnabled ? 'destructive' : ''}" onclick="toggleAction('smsEnabled')">
+        <div class="action-title">${c.smsEnabled ? 'Disable SMS' : 'Enable SMS'}</div>
+        <div class="action-desc">${c.smsEnabled ? 'Block this company from sending SMS messages' : 'Re-enable SMS for this company'}</div>
+        <div class="action-status" style="color:${c.smsEnabled ? 'var(--success)' : 'var(--danger)'}">Currently: ${c.smsEnabled ? 'Enabled' : 'Disabled'}</div>
+      </div>
+      <div class="action-card" onclick="adjustThreshold()">
+        <div class="action-title">Adjust Spam Threshold</div>
+        <div class="action-desc">Change the spam detection sensitivity for this company</div>
+        <div class="action-status" style="color:var(--primary)">Current: ${c.spamThreshold}</div>
+      </div>
+    </div>
+
+    <div class="section-title">Account Security</div>
+    <div class="actions-grid" style="margin-bottom:24px">
+      <div class="action-card ${!c.lockout ? 'destructive' : ''}" onclick="toggleAction('lockout')">
+        <div class="action-title">${c.lockout ? 'Remove Lockout' : 'Lock Out Company'}</div>
+        <div class="action-desc">${c.lockout ? 'Allow users to sign in again' : 'Prevent all users from signing in'}</div>
+        <div class="action-status" style="color:${c.lockout ? 'var(--danger)' : 'var(--success)'}">Currently: ${c.lockout ? 'Locked Out' : 'Not Locked'}</div>
+      </div>
+      <div class="action-card ${!c.paymentsBlocked ? 'destructive' : ''}" onclick="toggleAction('paymentsBlocked')">
+        <div class="action-title">${c.paymentsBlocked ? 'Unblock Payments' : 'Block Payments'}</div>
+        <div class="action-desc">${c.paymentsBlocked ? 'Re-enable payment processing' : 'Prevent all payment processing'}</div>
+        <div class="action-status" style="color:${c.paymentsBlocked ? 'var(--danger)' : 'var(--success)'}">Currently: ${c.paymentsBlocked ? 'Blocked' : 'Active'}</div>
+      </div>
+      <div class="action-card ${!c.preventSignup ? 'destructive' : ''}" onclick="toggleAction('preventSignup')">
+        <div class="action-title">${c.preventSignup ? 'Allow Signups' : 'Prevent Signups'}</div>
+        <div class="action-desc">${c.preventSignup ? 'Allow new users to join this company' : 'Block new user registrations'}</div>
+        <div class="action-status" style="color:${c.preventSignup ? 'var(--danger)' : 'var(--success)'}">Currently: ${c.preventSignup ? 'Blocked' : 'Allowed'}</div>
+      </div>
+      <div class="action-card" onclick="changeFraudStatus()">
+        <div class="action-title">Set Fraud Status</div>
+        <div class="action-desc">Update the fraud classification for this company</div>
+        <div class="action-status"><span class="badge ${fraudBadgeClass(c.fraudStatus)}">${c.fraudStatus}</span></div>
+      </div>
+    </div>
+
+    <div class="section-title">User Actions</div>
+    <div class="actions-grid">
+      ${c.users.filter(u => u.lockedAt).map(u => `
+        <div class="action-card" onclick="unlockUser('${u.email}')">
+          <div class="action-title">Unlock ${u.name}</div>
+          <div class="action-desc">Clear failed attempts and unlock account</div>
+          <div class="action-status" style="color:var(--danger)">Locked since ${u.lockedAt}</div>
+        </div>
+      `).join('') || '<div style="color:#9ca3af;font-size:13px;padding:8px 0;">No locked users</div>'}
+      ${c.users.map(u => `
+        <div class="action-card" onclick="forcePasswordChange('${u.email}')">
+          <div class="action-title">Force Password Change</div>
+          <div class="action-desc">${u.name} (${u.email})</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function switchTab(el, id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+function showModal(title, body, btnText, btnClass, onConfirm) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').textContent = body;
+  const btn = document.getElementById('modalConfirm');
+  btn.textContent = btnText;
+  btn.className = 'btn ' + btnClass;
+  btn.onclick = () => { onConfirm(); closeModal(); };
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function toggleAction(key) {
+  const c = currentCompany;
+  const labels = {
+    emailEnabled: [c.emailEnabled ? 'Disable Email Sending' : 'Enable Email Sending', c.emailEnabled ? 'This will prevent the company from sending any emails.' : 'This will allow the company to send emails again.'],
+    smsEnabled: [c.smsEnabled ? 'Disable SMS Sending' : 'Enable SMS Sending', c.smsEnabled ? 'This will prevent the company from sending any SMS messages.' : 'This will allow the company to send SMS again.'],
+    lockout: [c.lockout ? 'Remove Company Lockout' : 'Lock Out Company', c.lockout ? 'All users will be able to sign in again.' : 'All users will be immediately prevented from signing in.'],
+    paymentsBlocked: [c.paymentsBlocked ? 'Unblock Payments' : 'Block Payments', c.paymentsBlocked ? 'Payment processing will be re-enabled.' : 'All payment processing will be stopped.'],
+    preventSignup: [c.preventSignup ? 'Allow Signups' : 'Prevent Signups', c.preventSignup ? 'New users will be able to register for this company.' : 'New user registrations will be blocked.'],
+  };
+  const [title, body] = labels[key];
+  const dangerous = (key === 'emailEnabled' && c.emailEnabled) || (key === 'smsEnabled' && c.smsEnabled) || (key === 'lockout' && !c.lockout) || (key === 'paymentsBlocked' && !c.paymentsBlocked) || (key === 'preventSignup' && !c.preventSignup);
+  showModal(title, body, 'Confirm', dangerous ? 'btn-danger' : 'btn-success', () => {
+    c[key] = !c[key];
+    showToast(`${title} - Done`);
+    render();
+  });
+}
+
+function adjustThreshold() {
+  const val = prompt('Enter new spam threshold (0.0 - 1.0):', currentCompany.spamThreshold);
+  if (val !== null) {
+    const n = parseFloat(val);
+    if (!isNaN(n) && n >= 0 && n <= 1) {
+      currentCompany.spamThreshold = n;
+      showToast(`Spam threshold updated to ${n}`);
+      render();
+    }
+  }
+}
+
+function changeFraudStatus() {
+  const statuses = ['legit', 'likely_legit', 'monitoring', 'fraud_alert', 'fraudulent'];
+  const val = prompt(`Set fraud status to one of:\n${statuses.join(', ')}\n\nCurrent: ${currentCompany.fraudStatus}`, currentCompany.fraudStatus);
+  if (val && statuses.includes(val)) {
+    currentCompany.fraudStatus = val;
+    showToast(`Fraud status set to "${val}"`);
+    render();
+  }
+}
+
+function unlockUser(email) {
+  showModal('Unlock User', `Clear failed attempts and unlock ${email}?`, 'Unlock', 'btn-success', () => {
+    const u = currentCompany.users.find(u => u.email === email);
+    if (u) { u.lockedAt = null; u.failedAttempts = 0; }
+    showToast(`${email} unlocked`);
+    render();
+  });
+}
+
+function forcePasswordChange(email) {
+  showModal('Force Password Change', `Require ${email} to change their password on next login?`, 'Confirm', 'btn-warning', () => {
+    showToast(`Password change required for ${email}`);
+  });
+}
+</script>
+</body>
+</html>
