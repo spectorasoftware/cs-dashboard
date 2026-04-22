@@ -519,6 +519,10 @@
     box-shadow: 0 8px 30px rgba(0,0,0,0.15);
   }
 
+  .modal.modal-wide {
+    max-width: 720px;
+  }
+
   .modal h3 { font-size: 16px; margin-bottom: 8px; }
   .modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
 
@@ -552,6 +556,57 @@
     border-radius: 50%;
     display: inline-block;
   }
+
+  .email-row { cursor: pointer; }
+  .email-row:hover td { background: #eef2ff !important; }
+
+  .email-detail-grid {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 6px 12px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .email-detail-grid .label {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .email-body-box {
+    background: #f9fafb;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .email-modal-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  .email-modal-tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+  }
+
+  .email-modal-tab:hover { color: var(--text); }
+  .email-modal-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  .email-modal-tab-content { display: none; }
+  .email-modal-tab-content.active { display: block; }
 </style>
 </head>
 <body>
@@ -588,6 +643,10 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="emailModalOverlay" onclick="if(event.target===this)closeEmailModal()">
+  <div class="modal modal-wide" id="emailModal"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -619,9 +678,9 @@ const COMPANIES = [
       { id: "ME-388", subject: "Schedule Your Annual Inspection", sentAt: "2026-04-05", sent: 289, delivered: 280, bounced: 6, spamReports: 2, opens: 178, clicks: 52 },
     ],
     recentEmails: [
-      { id: "E-8821", to: "client@example.com", subject: "Your Inspection Report is Ready", sentAt: "2026-04-21 14:23", spamScore: 0.05, spam: false, status: "delivered", reasons: [] },
-      { id: "E-8820", to: "agent@realty.com", subject: "Inspection Scheduled - 123 Oak St", sentAt: "2026-04-21 13:11", spamScore: 0.02, spam: false, status: "opened", reasons: [] },
-      { id: "E-8819", to: "buyer@mail.com", subject: "Payment Confirmation", sentAt: "2026-04-21 11:45", spamScore: 0.08, spam: false, status: "delivered", reasons: [] },
+      { id: "E-8821", to: "client@example.com", from: "john@apexhome.com", subject: "Your Inspection Report is Ready", sentAt: "2026-04-21 14:23", spamScore: 0.05, spam: false, status: "delivered", reasons: [], language: "en", body: "Hi there,\n\nYour inspection report for 123 Oak Street is now ready for review. You can access it by clicking the link below.\n\nPlease don't hesitate to reach out if you have any questions about the findings.\n\nBest regards,\nJohn Apex\nApex Home Inspections", translation: null },
+      { id: "E-8820", to: "agent@realty.com", from: "john@apexhome.com", subject: "Inspection Scheduled - 123 Oak St", sentAt: "2026-04-21 13:11", spamScore: 0.02, spam: false, status: "opened", reasons: [], language: "en", body: "Hi Sarah,\n\nThis is to confirm that the home inspection for 123 Oak Street has been scheduled for April 23rd at 10:00 AM.\n\nPlease ensure the property is accessible. The inspection typically takes 2-3 hours.\n\nThanks,\nJohn Apex\nApex Home Inspections", translation: null },
+      { id: "E-8819", to: "buyer@mail.com", from: "noreply@apexhome.com", subject: "Payment Confirmation", sentAt: "2026-04-21 11:45", spamScore: 0.08, spam: false, status: "delivered", reasons: [], language: "en", body: "Dear Customer,\n\nThank you for your payment of $425.00 for the home inspection at 456 Maple Drive.\n\nReceipt #: INV-2026-1847\nDate: April 21, 2026\nAmount: $425.00\n\nYour inspection report will be delivered within 24 hours of the inspection.\n\nApex Home Inspections", translation: null },
     ],
     spamHistory: { days: ["Apr 8","Apr 9","Apr 10","Apr 11","Apr 12","Apr 13","Apr 14","Apr 15","Apr 16","Apr 17","Apr 18","Apr 19","Apr 20","Apr 21"], counts: [0,0,1,0,0,0,0,0,0,1,0,0,0,0] },
     users: [
@@ -664,11 +723,11 @@ const COMPANIES = [
       { id: "ME-410", subject: "Don't Miss Out! Free Inspection Assessment", sentAt: "2026-04-14", sent: 98, delivered: 82, bounced: 10, spamReports: 3, opens: 41, clicks: 7 },
     ],
     recentEmails: [
-      { id: "E-9102", to: "victim@mail.com", subject: "URGENT: Your account requires immediate verification", sentAt: "2026-04-21 15:02", spamScore: 0.82, spam: true, status: "blocked", reasons: ["urgency_language", "account_threats", "phishing_pii_request"] },
-      { id: "E-9101", to: "target@mail.com", subject: "Wire transfer needed for inspection deposit", sentAt: "2026-04-21 14:48", spamScore: 0.71, spam: true, status: "blocked", reasons: ["wire_transfer_fraud", "financial_scam"] },
-      { id: "E-9100", to: "user@mail.com", subject: "Inspection Report - 456 Elm St", sentAt: "2026-04-21 12:30", spamScore: 0.12, spam: false, status: "delivered", reasons: [] },
-      { id: "E-9099", to: "agent@broker.com", subject: "Your inspection is confirmed", sentAt: "2026-04-21 11:15", spamScore: 0.04, spam: false, status: "opened", reasons: [] },
-      { id: "E-9098", to: "list@bulk.com", subject: "ACT NOW!! Claim your FREE home inspection gift card", sentAt: "2026-04-21 10:33", spamScore: 0.91, spam: true, status: "blocked", reasons: ["urgency_language", "gift_card_scam", "suspicious_tld"] },
+      { id: "E-9102", to: "victim@mail.com", from: "mike@quickcheck.io", subject: "URGENT: Your account requires immediate verification", sentAt: "2026-04-21 15:02", spamScore: 0.82, spam: true, status: "blocked", reasons: ["urgency_language", "account_threats", "phishing_pii_request"], language: "en", body: "URGENT NOTICE\n\nYour account has been flagged for suspicious activity and will be PERMANENTLY SUSPENDED within 24 hours unless you verify your identity immediately.\n\nClick here to verify: http://qu1ckcheck-verify.tk/auth\n\nYou must provide your full name, date of birth, and social security number to complete verification.\n\nFailure to act will result in permanent account termination and legal action.\n\nQuickCheck Security Team", translation: null },
+      { id: "E-9101", to: "target@mail.com", from: "mike@quickcheck.io", subject: "Wire transfer needed for inspection deposit", sentAt: "2026-04-21 14:48", spamScore: 0.71, spam: true, status: "blocked", reasons: ["wire_transfer_fraud", "financial_scam"], language: "fr", body: "Bonjour,\n\nPour confirmer votre inspection de la propri\u00e9t\u00e9, nous avons besoin d'un d\u00e9p\u00f4t de 500$ par virement bancaire.\n\nVeuillez envoyer le virement aux coordonn\u00e9es suivantes:\nBanque: Western Union\nCompte: 8847291034\nR\u00e9f\u00e9rence: INSP-2026-URGENT\n\nCe d\u00e9p\u00f4t doit \u00eatre effectu\u00e9 dans les 2 heures pour garantir votre cr\u00e9neau d'inspection.\n\nCordialement,\nService des inspections QuickCheck", translation: "Hello,\n\nTo confirm your property inspection, we need a $500 deposit by wire transfer.\n\nPlease send the wire to the following details:\nBank: Western Union\nAccount: 8847291034\nReference: INSP-2026-URGENT\n\nThis deposit must be made within 2 hours to guarantee your inspection slot.\n\nBest regards,\nQuickCheck Inspection Service" },
+      { id: "E-9100", to: "user@mail.com", from: "mike@quickcheck.io", subject: "Inspection Report - 456 Elm St", sentAt: "2026-04-21 12:30", spamScore: 0.12, spam: false, status: "delivered", reasons: [], language: "en", body: "Hi,\n\nYour inspection report for 456 Elm Street is attached to this email.\n\nPlease review at your convenience and let us know if you have any questions.\n\nThank you,\nMike Quick\nQuickCheck Property Services", translation: null },
+      { id: "E-9099", to: "agent@broker.com", from: "mike@quickcheck.io", subject: "Your inspection is confirmed", sentAt: "2026-04-21 11:15", spamScore: 0.04, spam: false, status: "opened", reasons: [], language: "es", body: "Hola,\n\nEste correo es para confirmar que la inspecci\u00f3n de la propiedad en 789 Calle Roble ha sido programada para el 24 de abril a las 2:00 PM.\n\nPor favor aseg\u00farese de que la propiedad est\u00e9 accesible. La inspecci\u00f3n generalmente toma de 2 a 3 horas.\n\nGracias,\nMike Quick\nQuickCheck Property Services", translation: "Hello,\n\nThis email is to confirm that the property inspection at 789 Oak Street has been scheduled for April 24th at 2:00 PM.\n\nPlease ensure the property is accessible. The inspection typically takes 2 to 3 hours.\n\nThank you,\nMike Quick\nQuickCheck Property Services" },
+      { id: "E-9098", to: "list@bulk.com", from: "mike@quickcheck.io", subject: "ACT NOW!! Claim your FREE home inspection gift card", sentAt: "2026-04-21 10:33", spamScore: 0.91, spam: true, status: "blocked", reasons: ["urgency_language", "gift_card_scam", "suspicious_tld"], language: "en", body: "CONGRATULATIONS!!!\n\nYou have been specially selected to receive a $500 Amazon Gift Card!\n\nAll you need to do is schedule a home inspection with QuickCheck Property Services and the gift card is YOURS!\n\nThis offer expires in 24 HOURS so ACT NOW!\n\nClick here to claim: http://free-giftcard-promo.xyz/claim?id=8827\n\nDon't miss this INCREDIBLE opportunity!!!", translation: null },
     ],
     spamHistory: { days: ["Apr 8","Apr 9","Apr 10","Apr 11","Apr 12","Apr 13","Apr 14","Apr 15","Apr 16","Apr 17","Apr 18","Apr 19","Apr 20","Apr 21"], counts: [0,1,2,1,3,2,4,3,5,4,6,5,8,11] },
     users: [
@@ -714,9 +773,9 @@ const COMPANIES = [
       { id: "ME-385", subject: "Act immediately - Your home is at risk!", sentAt: "2026-04-03", sent: 1800, delivered: 1200, bounced: 380, spamReports: 150, opens: 410, clicks: 28 },
     ],
     recentEmails: [
-      { id: "E-7650", to: "bulk1@list.com", subject: "You've been selected for a FREE gift card!", sentAt: "2026-04-10 22:14", spamScore: 0.97, spam: true, status: "blocked", reasons: ["gift_card_scam", "urgency_language", "brand_impersonation", "suspicious_tld"] },
-      { id: "E-7649", to: "bulk2@list.com", subject: "FINAL WARNING: Account suspended", sentAt: "2026-04-10 22:13", spamScore: 0.94, spam: true, status: "blocked", reasons: ["account_threats", "phishing_pii_request", "urgency_language"] },
-      { id: "E-7648", to: "bulk3@list.com", subject: "Verify your PayPal account now", sentAt: "2026-04-10 22:12", spamScore: 0.96, spam: true, status: "blocked", reasons: ["brand_impersonation", "homoglyph_attack", "phishing_pii_request"] },
+      { id: "E-7650", to: "bulk1@list.com", from: "frank@trustbuild.com", subject: "You've been selected for a FREE gift card!", sentAt: "2026-04-10 22:14", spamScore: 0.97, spam: true, status: "blocked", reasons: ["gift_card_scam", "urgency_language", "brand_impersonation", "suspicious_tld"], language: "zh", body: "\u606d\u559c\u60a8\uff01\n\n\u60a8\u5df2\u88ab\u9009\u4e2d\u83b7\u5f97\u4e00\u5f20\u4ef7\u503c1000\u7f8e\u5143\u7684\u4e9a\u9a6c\u900a\u793c\u54c1\u5361\uff01\n\n\u8981\u9886\u53d6\u60a8\u7684\u793c\u54c1\u5361\uff0c\u8bf7\u7acb\u5373\u70b9\u51fb\u4e0b\u9762\u7684\u94fe\u63a5\u5e76\u8f93\u5165\u60a8\u7684\u4fe1\u7528\u5361\u4fe1\u606f\u4ee5\u9a8c\u8bc1\u60a8\u7684\u8eab\u4efd\u3002\n\nhttp://amaz0n-rewards.xyz/claim\n\n\u6b64\u4f18\u60e0\u5c06\u572812\u5c0f\u65f6\u5185\u8fc7\u671f\uff01\u7acb\u5373\u884c\u52a8\uff01\n\nTrustBuild\u56e2\u961f", translation: "Congratulations!\n\nYou have been selected to receive a $1,000 Amazon gift card!\n\nTo claim your gift card, please click the link below immediately and enter your credit card information to verify your identity.\n\nhttp://amaz0n-rewards.xyz/claim\n\nThis offer expires in 12 hours! Act now!\n\nTrustBuild Team" },
+      { id: "E-7649", to: "bulk2@list.com", from: "admin@trustbuild.com", subject: "FINAL WARNING: Account suspended", sentAt: "2026-04-10 22:13", spamScore: 0.94, spam: true, status: "blocked", reasons: ["account_threats", "phishing_pii_request", "urgency_language"], language: "ru", body: "\u0412\u041d\u0418\u041c\u0410\u041d\u0418\u0415!\n\n\u0412\u0430\u0448 \u0430\u043a\u043a\u0430\u0443\u043d\u0442 \u0431\u044b\u043b \u0437\u0430\u0431\u043b\u043e\u043a\u0438\u0440\u043e\u0432\u0430\u043d \u0438\u0437-\u0437\u0430 \u043f\u043e\u0434\u043e\u0437\u0440\u0438\u0442\u0435\u043b\u044c\u043d\u043e\u0439 \u0430\u043a\u0442\u0438\u0432\u043d\u043e\u0441\u0442\u0438. \u0414\u043b\u044f \u0432\u043e\u0441\u0441\u0442\u0430\u043d\u043e\u0432\u043b\u0435\u043d\u0438\u044f \u0434\u043e\u0441\u0442\u0443\u043f\u0430 \u043d\u0435\u043e\u0431\u0445\u043e\u0434\u0438\u043c\u043e \u043d\u0435\u043c\u0435\u0434\u043b\u0435\u043d\u043d\u043e \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044c \u0432\u0430\u0448\u0443 \u043b\u0438\u0447\u043d\u043e\u0441\u0442\u044c.\n\n\u041f\u0435\u0440\u0435\u0439\u0434\u0438\u0442\u0435 \u043f\u043e \u0441\u0441\u044b\u043b\u043a\u0435: http://trustbu1ld-verify.tk/restore\n\n\u0423\u043a\u0430\u0436\u0438\u0442\u0435:\n- \u041f\u043e\u043b\u043d\u043e\u0435 \u0438\u043c\u044f\n- \u041d\u043e\u043c\u0435\u0440 \u0441\u043e\u0446\u0438\u0430\u043b\u044c\u043d\u043e\u0433\u043e \u0441\u0442\u0440\u0430\u0445\u043e\u0432\u0430\u043d\u0438\u044f\n- \u041d\u043e\u043c\u0435\u0440 \u0431\u0430\u043d\u043a\u043e\u0432\u0441\u043a\u043e\u0433\u043e \u0441\u0447\u0451\u0442\u0430\n\n\u0415\u0441\u043b\u0438 \u0432\u044b \u043d\u0435 \u043e\u0442\u0432\u0435\u0442\u0438\u0442\u0435 \u0432 \u0442\u0435\u0447\u0435\u043d\u0438\u0435 6 \u0447\u0430\u0441\u043e\u0432, \u0432\u0430\u0448 \u0430\u043a\u043a\u0430\u0443\u043d\u0442 \u0431\u0443\u0434\u0435\u0442 \u0443\u0434\u0430\u043b\u0451\u043d \u043d\u0430\u0432\u0441\u0435\u0433\u0434\u0430.\n\n\u0421\u043b\u0443\u0436\u0431\u0430 \u0431\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u043e\u0441\u0442\u0438 TrustBuild", translation: "ATTENTION!\n\nYour account has been blocked due to suspicious activity. To restore access, you must immediately verify your identity.\n\nGo to the link: http://trustbu1ld-verify.tk/restore\n\nProvide:\n- Full name\n- Social security number\n- Bank account number\n\nIf you do not respond within 6 hours, your account will be permanently deleted.\n\nTrustBuild Security Service" },
+      { id: "E-7648", to: "bulk3@list.com", from: "admin@trustbuild.com", subject: "Verify your PayPal account now", sentAt: "2026-04-10 22:12", spamScore: 0.96, spam: true, status: "blocked", reasons: ["brand_impersonation", "homoglyph_attack", "phishing_pii_request"], language: "en", body: "Dear PayPal Customer,\n\nWe have detected unusual activity on your PayPal account. Your account access has been limited until you confirm your identity.\n\nPlease click the link below to restore full access:\nhttp://paypa1-secure.trustbu1ld.com/verify\n\nYou will need to provide:\n- Your PayPal login credentials\n- Credit card number on file\n- Social Security Number for verification\n\nIf you do not verify within 24 hours, your account will be permanently closed and all funds will be frozen.\n\nPayPal Security Team\n(This is an automated message from PayPaI)", translation: null },
     ],
     spamHistory: { days: ["Apr 8","Apr 9","Apr 10","Apr 11","Apr 12","Apr 13","Apr 14","Apr 15","Apr 16","Apr 17","Apr 18","Apr 19","Apr 20","Apr 21"], counts: [45,52,78,0,0,0,0,0,0,0,0,0,0,0] },
     users: [
@@ -762,8 +821,8 @@ const COMPANIES = [
       { id: "ME-420", subject: "Your Home Maintenance Checklist for Spring", sentAt: "2026-04-19", sent: 178, delivered: 176, bounced: 1, spamReports: 0, opens: 145, clicks: 38 },
     ],
     recentEmails: [
-      { id: "E-9200", to: "homeowner@mail.com", subject: "Inspection Report Ready - 789 Pine Ave", sentAt: "2026-04-21 16:10", spamScore: 0.03, spam: false, status: "delivered", reasons: [] },
-      { id: "E-9199", to: "agent@homes.com", subject: "Scheduling Confirmation", sentAt: "2026-04-21 14:22", spamScore: 0.01, spam: false, status: "opened", reasons: [] },
+      { id: "E-9200", to: "homeowner@mail.com", from: "amy@reliable.com", subject: "Inspection Report Ready - 789 Pine Ave", sentAt: "2026-04-21 16:10", spamScore: 0.03, spam: false, status: "delivered", reasons: [], language: "en", body: "Hello,\n\nGreat news! Your home inspection report for 789 Pine Avenue is now complete and ready for your review.\n\nKey findings:\n- Roof: Good condition, minor wear noted\n- Foundation: No issues detected\n- Electrical: Up to code\n- Plumbing: Small leak under kitchen sink (recommend repair)\n\nThe full report with photos is available in your Spectora account.\n\nPlease feel free to call us with any questions.\n\nBest,\nAmy Chen\nReliable Inspections Co", translation: null },
+      { id: "E-9199", to: "agent@homes.com", from: "david@reliable.com", subject: "Scheduling Confirmation", sentAt: "2026-04-21 14:22", spamScore: 0.01, spam: false, status: "opened", reasons: [], language: "en", body: "Hi,\n\nThis confirms the inspection for 321 Birch Lane has been scheduled:\n\nDate: April 25, 2026\nTime: 9:00 AM\nInspector: David Park\nEstimated Duration: 3 hours\n\nPlease ensure all utilities are on and the property is accessible.\n\nThank you,\nDavid Park\nReliable Inspections Co", translation: null },
     ],
     spamHistory: { days: ["Apr 8","Apr 9","Apr 10","Apr 11","Apr 12","Apr 13","Apr 14","Apr 15","Apr 16","Apr 17","Apr 18","Apr 19","Apr 20","Apr 21"], counts: [0,0,0,0,0,0,0,0,0,0,0,0,0,0] },
     users: [
@@ -980,7 +1039,7 @@ function renderEmails(c) {
         <thead><tr><th>ID</th><th>To</th><th>Subject</th><th>Sent</th><th>Spam Score</th><th>Status</th><th>Flags</th></tr></thead>
         <tbody>
           ${c.recentEmails.map(e => `
-            <tr>
+            <tr class="email-row" onclick="openEmailModal('${e.id}')">
               <td style="font-family:monospace;font-size:12px">${e.id}</td>
               <td>${e.to}</td>
               <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.subject}</td>
@@ -1049,6 +1108,67 @@ function renderUsers(c) {
       </table>
     </div>
   `;
+}
+
+function openEmailModal(emailId) {
+  const e = currentCompany.recentEmails.find(em => em.id === emailId);
+  if (!e) return;
+  const langNames = { en: 'English', fr: 'French', es: 'Spanish', zh: 'Chinese', ru: 'Russian', de: 'German', pt: 'Portuguese', ja: 'Japanese', ko: 'Korean', ar: 'Arabic' };
+  const langName = langNames[e.language] || e.language;
+  const isNonEnglish = e.language !== 'en';
+  const hasTranslation = isNonEnglish && e.translation;
+
+  const modal = document.getElementById('emailModal');
+  modal.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+      <div>
+        <h3 style="font-size:16px;margin-bottom:4px">${e.subject}</h3>
+        <div style="font-size:12px;color:var(--text-secondary)">${e.id} &middot; ${langName}${isNonEnglish ? ' <span class="badge badge-purple" style="margin-left:4px">Non-English</span>' : ''}</div>
+      </div>
+      <button class="btn btn-sm" onclick="closeEmailModal()" style="flex-shrink:0">&times;</button>
+    </div>
+    <div class="email-detail-grid">
+      <div class="label">From</div><div>${e.from}</div>
+      <div class="label">To</div><div>${e.to}</div>
+      <div class="label">Sent</div><div>${e.sentAt}</div>
+      <div class="label">Status</div><div><span class="badge ${statusBadge(e.status)}">${e.status}</span></div>
+      <div class="label">Spam Score</div><div><span style="font-weight:600;color:${e.spamScore >= 0.6 ? 'var(--danger)' : e.spamScore >= 0.3 ? 'var(--warning)' : 'var(--success)'}">${e.spamScore.toFixed(2)}</span></div>
+      ${e.reasons.length ? `<div class="label">Flags</div><div>${e.reasons.map(r => '<span class="spam-reason">' + r.replace(/_/g, ' ') + '</span>').join(' ')}</div>` : ''}
+    </div>
+    ${hasTranslation ? `
+      <div class="email-modal-tabs">
+        <div class="email-modal-tab active" onclick="switchEmailTab(this, 'original')">Original (${langName})</div>
+        <div class="email-modal-tab" onclick="switchEmailTab(this, 'translated')">Translated (English)</div>
+      </div>
+      <div class="email-modal-tab-content active" id="emailtab-original">
+        <div class="email-body-box">${escapeHtml(e.body)}</div>
+      </div>
+      <div class="email-modal-tab-content" id="emailtab-translated">
+        <div class="email-body-box">${escapeHtml(e.translation)}</div>
+      </div>
+    ` : `
+      <div style="font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Body</div>
+      <div class="email-body-box">${escapeHtml(e.body)}</div>
+    `}
+  `;
+  document.getElementById('emailModalOverlay').classList.add('open');
+}
+
+function closeEmailModal() {
+  document.getElementById('emailModalOverlay').classList.remove('open');
+}
+
+function switchEmailTab(el, id) {
+  el.parentElement.querySelectorAll('.email-modal-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const parent = el.closest('.modal');
+  parent.querySelectorAll('.email-modal-tab-content').forEach(t => t.classList.remove('active'));
+  parent.querySelector('#emailtab-' + id).classList.add('active');
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function renderActions(c) {
